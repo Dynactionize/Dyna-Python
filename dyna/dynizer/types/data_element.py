@@ -35,7 +35,7 @@ class DataElement:
                 #return value
                 # Remove timezone for now since not supported
                 return value.replace(tzinfo=None)
-            return datetime.min
+            return datetime.datetime.min
         if datatype == DataType.URI:
             return str(value)
         return None
