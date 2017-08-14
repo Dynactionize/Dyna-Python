@@ -19,7 +19,7 @@ class FilterOperator(Enum):
         4: '>',
         5: '>=',
         6: '!=',
-        7: '~='
+        7: '~'
     })
     def __to_str(v):
         return FilterOperator.__to_str.trmap[int(v)]
@@ -41,7 +41,7 @@ class FilterOperator(Enum):
         '>': 'GT',
         '>=': 'GTEQ',
         '!=': 'NEQ',
-        '~=': 'TSRCH'
+        '~': 'TSRCH'
     })
     def from_string(cls, string):
         op_name = FilterOperators.from_string.trmap[string]
