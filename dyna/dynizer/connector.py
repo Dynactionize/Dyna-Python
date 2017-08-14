@@ -85,6 +85,14 @@ class DynizerConnection:
         f = self.__get_function_handle_for_class('list', type)
         return f(field_filters, pagination_filter)
 
+    def list_linked(self, obj, pagination_filter=None):
+        if type(obj) == Action:
+            return self.__list_linked_Topologies(obj, pagination_filter)
+        elif type(obj) == Topology:
+            return self.__list_linked_Actions(obj, pagination_filter)
+        else:
+            raise DispatchError(obj, 'list_linked')
+
     # Query functions
     def query(self, query, pagination_filter=None):
         f = self.__get_function_handle_for_obj('query', query)
@@ -191,6 +199,20 @@ class DynizerConnection:
         url = '/data/v1_1/actions/{0}/topologies/{1}'.format(
                 action.id, '' if topology.id is None else topology.id)
         return self.__patch(url, data, Topology)
+
+    def __list_linked_Topologies(self, action, pagination_filter):
+        url = DynizerConnection.__build_url_with_arguments(
+                Topology,
+                '/data/v1_1/actions/{0}/topologies'.format(action.id),
+                [], pagination_filter)
+        return self.__GET(url, Topology)
+
+    def __list_linked_Actions(self, topology, pagination_filter):
+        url = DynizerConnection.__build_url_with_arguments(
+                Action,
+                '/data/v1_1/topologies/{0}/actions'.format(topology.id),
+                [], pagination_filter)
+        return self.__GET(url, Action)
 
 
     def __create_Instance(self, obj):
