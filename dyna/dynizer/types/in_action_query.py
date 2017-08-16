@@ -40,9 +40,9 @@ class InActionQueryValue:
 
 
 class InActionQueryResult(IntEnum):
-    INSTANCES = 1
-    ACTIONS = 2
-    TOPOLOGIES = 4
+    ACTIONS = 1
+    TOPOLOGIES = 2
+    INSTANCES = 4
 
 
 class InActionQuery:
