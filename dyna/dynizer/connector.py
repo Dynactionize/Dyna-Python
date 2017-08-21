@@ -6,11 +6,14 @@ import http.client
 from enum import Enum, IntEnum
 import urllib
 import re
+import json
+import base64
 
 
 class DynizerConnection:
     def __init__(self, address, port=None, endpoint_prefix=None, https=False,
-                 key_file=None, cert_file=None, username=None, password=None):
+                 key_file=None, cert_file=None, username=None, password=None,
+                 auto_reauth=True)
         self.dynizer_address = address
         if port == None:
             self.dynizer_port = 80 if https == False else 443
@@ -20,11 +23,14 @@ class DynizerConnection:
         self.https = https
         self.key_file = key_file
         self.cert_file = cert_file
+        self.username = username
+        self.password = password
         self._headers = {
             'cache-control': 'no-cache',
             'content-type': 'application/json'
         }
         self.connection = None
+        self.token = None
 
     def __del__(self):
         self.close()
@@ -37,11 +43,36 @@ class DynizerConnection:
                 self.close()
 
         if self.https:
-            self.connection = http.client.HTTPSConnection(
-                    self.dynizer_address, self.dynizer_port,
-                    key_file=self.key_file, cert_file=self.cert_file)
+            if not self.key_file is None and not self.cert_file is None:
+                self.connection = http.client.HTTPSConnection(
+                        self.dynizer_address, self.dynizer_port,
+                        key_file=self.key_file, cert_file=self.cert_file)
+            elif not self.username is None and not self.password is None:
+                self.connection = http.client.HTTPSConnection(
+                        self.dynizer_address, self.dynizer_port)
+                self._login(self.username, self.password)
+            else:
+                self.connection = http.client.HTTPSConnection(
+                        self.dynizer_address, self.dynizer_port)
         else:
             self.connection = http.client.HTTPConnection(self.dynizer_address, self.dynizer_port)
+            if not self.username is None and not self.password is None:
+                self._login(self.username, self.password)
+
+
+    def _login(self, user, password):
+        user = user.lower()
+        content = json.dumps({
+                'userName': user,
+                'userPassword': base64.b64encode(password.encode()).decode()
+                })
+        url = '/ui-backend/v1/users/Login'
+        data = self.__POST(url, content, dict, success_code=200)
+        self.token = data['jwtToken']['value']
+        self._headers['x_dynizer_authkey'] = user
+        self._headers['x_dynizer_session'] = self.token
+        return True
+
 
 
     def close(self):
@@ -52,6 +83,9 @@ class DynizerConnection:
 
 
     # Functions that operate on partially of fully populated objects
+    def analyze(self, dictionary, corpus, text):
+        return self.__analyze(dictionary, corpus, text)
+
     def create(self, obj):
         f = self.__get_function_handle_for_obj('create', obj)
         return f(obj)
@@ -140,6 +174,14 @@ class DynizerConnection:
         return url
 
 
+    def __analyze(self, dictionary, corpus, text):
+        #url = '/analyzer/v1/dictionaries/English/wordcorpora/EnglishCorpus/analyze'
+        url = '/analyzer/v1/dictionaries/{0}/wordcorpora/{1}/analyze'.format(dictionary, corpus)
+        content = json.dumps({
+                'split_algorithm': 'group',
+                'text': text
+                })
+        return self.__POST(url, content, list, success_code=200)
 
 
 
@@ -277,10 +319,11 @@ class DynizerConnection:
         return self.__REQUEST('GET', endpoint, result_obj=result_obj, success_code=success_code)
 
     def __DELETE(self, endpoint, result_obj=None, success_code=204):
-        return self.__REQUEST('DELETE', endpoint, resultobj=reult_obj, success_code=success_code)
+        return self.__REQUEST('DELETE', endpoint, resultobj=result_obj, success_code=success_code)
 
 
-    def __REQUEST(self, verb, endpoint, payload=None, result_obj=None, success_code=200):
+    def __REQUEST(self, verb, endpoint, payload=None, result_obj=None, success_code=200,
+            reauthenticated=False)
         if self.connection is None:
             raise ConnectionError('Not connected to dynizer. Please issue a connect() call first')
 
@@ -300,6 +343,12 @@ class DynizerConnection:
             print(e)
             raise ConnectionError() from e
 
+        if response.status == 401 and not self.username is None and not self.password is None and
+           self.auto_reauth == True and retry == False:
+            # Try to reauthenticate
+            self._login(self.username, self.password)
+            return self.__REQUEST(verb, endpoint, payload=payload, result_obj=result_obj,
+                    success_code=success_code, reauthenticated=True)
         if response.status != success_code:
             print('{0} {1}'.format(verb, url))
             if not payload is None:
@@ -307,13 +356,20 @@ class DynizerConnection:
             self.connect(True)
             raise RequestError(response.status, response.reason)
 
+        self.token = response.getheader('x_dynizer_session', None)
+        if not self.token is None:
+            self._headers['x_dynizer_session'] = self.token
+
 
         result = None
         if result_obj is not None:
             try:
                 bytestr = response.read()
                 json_string = bytestr.decode(response.headers.get_content_charset('utf-8'))
-                result = result_obj.from_json(json_string)
+                if result_obj == dict or result_obj == list:
+                    result = json.loads(json_string)
+                else:
+                    result = result_obj.from_json(json_string)
             except Exception as e:
                 self.connect(True)
                 print('{0} {1}'.format(verb, url))
