@@ -100,6 +100,10 @@ class DataElement:
         return retval
 
 
+    def to_string(self):
+        return DataElement._convert_to_json(self.datatype, self.value)
+
+
     def to_dict(self):
         dct = None
         try:
