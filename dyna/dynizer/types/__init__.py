@@ -6,4 +6,6 @@ from .data_type import DataType
 from .in_action_query import InActionQueryValue, InActionQueryResult, InActionQuery
 from .instance import Instance
 from .instance_element import InstanceElement
+from .multi_instance_query import MICombinator, MIAbstractOperator, MIIntersection, MIOutersection
+from .multi_instance_query import MultiInstanceQuery
 from .topology import Topology
