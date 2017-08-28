@@ -33,18 +33,18 @@ class CorrelationQueryValue:
 
 
 class CorrelationQueryResult(IntEnum):
-    INSTANCE = 1
-    ACTION = 2
-    TOPOLOGY = 4
+    ACTION = 1
+    TOPOLOGY = 2
+    INSTANCE = 4
 
     def to_string_list(val):
         lst = []
-        if (val&CorrelationQueryResult.INSTANCE) == CorrelationQueryResult.INSTANCE:
-            lst.append("Instance")
         if (val&CorrelationQueryResult.ACTION) == CorrelationQueryResult.ACTION:
             lst.append("Action")
         if (val&CorrelationQueryResult.TOPOLOGY) == CorrelationQueryResult.TOPOLOGY:
             lst.append("Topology")
+        if (val&CorrelationQueryResult.INSTANCE) == CorrelationQueryResult.INSTANCE:
+            lst.append("Instance")
         return lst
 
 
@@ -52,12 +52,12 @@ class CorrelationQueryResult(IntEnum):
     def from_string_list(lst):
         val = 0
         for e in lst:
-            if e == "Instance":
-                val |= CorrelationQueryResult.INSTANCE
-            elif e == "Action":
+            if e == "Action":
                 val |= CorrelationQueryResult.ACTION
             elif e == "Topology":
                 val |= CorrelationQueryResult.TOPOLOGY
+            elif e == "Instance":
+                val |= CorrelationQueryResult.INSTANCE
         return val
 
 

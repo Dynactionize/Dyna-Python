@@ -305,6 +305,21 @@ class DynizerConnection:
         return (actionres, topologyres, instanceres)
 
 
+    def __query_CorrelationQuery(self, query, pagination_filter):
+        json = query.to_json()
+        url = '/data/v1_1/correlationquery'
+        return self.__POST(url, json, dict, success_code=200)
+
+
+
+    def __query_MultiInstanceQuery(self, query, pagination_filter):
+        json = query.to_json()
+        url = DynizerConnection.__build_url_with_arguments(
+                Instance, '/data/v1_1/multiinstancequery', None, pagination_filter)
+        return self.__POST(url, json, Instance, success_code=200)
+
+
+
 
     def __POST(self, endpoint, payload, result_obj=None, success_code=201):
         return self.__REQUEST('POST', endpoint, payload, result_obj, success_code)
