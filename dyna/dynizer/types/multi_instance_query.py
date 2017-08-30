@@ -3,16 +3,16 @@ from ...common.errors import *
 from .in_action_query import InActionQuery, InActionQueryValue, InActionQueryResult
 from decimal import *
 import json
-import dateutil.parse
+import dateutil.parser
 from typing import Sequence
 
-class MICombinator(self, topology_positions: Sequence[int])
-    def __init__(self, topology_positions):
+class MICombinator:
+    def __init__(self, topology_positions: Sequence[int]):
         self.topology_positions = topology_positions
 
 
-class MIAbstractOperator()
-    def __init__(self, *args)
+class MIAbstractOperator:
+    def __init__(self, *args):
         self.operands = list(args)
 
     def to_string(self):
@@ -55,7 +55,7 @@ class MultiInstanceQuery:
                  combinator_set: Sequence[MICombinator],
                  operation: str,
                  resultfilter: Sequence[int]):
-        self.query_set = query_set,
+        self.query_set = query_set
         self.combinator_set = combinator_set
         self.operation = operation
         self.resultfilter = resultfilter
@@ -88,11 +88,11 @@ class MultiInstanceQuery:
             dct = {}
             dct['queryset'] = list(map(lambda x: x.to_dict(), self.query_set))
             dct['combinators'] = list(map(lambda x: x.topology_positions, self.combinator_set))
-            dct['operation'] = x.operation
+            dct['operation'] = self.operation
             dct['resultfilter'] = self.resultfilter
         except Exception as e:
             raise SerializationError(MultiInstanceQuery, 'dict') from e
-        return dict
+        return dct
 
     def to_json(self):
         json_string = ""

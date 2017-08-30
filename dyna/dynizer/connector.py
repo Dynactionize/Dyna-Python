@@ -13,7 +13,7 @@ import base64
 class DynizerConnection:
     def __init__(self, address, port=None, endpoint_prefix=None, https=False,
                  key_file=None, cert_file=None, username=None, password=None,
-                 auto_reauth=True)
+                 auto_reauth=True):
         self.dynizer_address = address
         if port == None:
             self.dynizer_port = 80 if https == False else 443
@@ -163,15 +163,15 @@ class DynizerConnection:
         if pagination_filter is not None:
             pagination = pagination_filter.compose_filter(cls)
 
-        if field_filters is not None:
-            if pagination_filter is not None:
+        if filters !=  '':
+            if pagination != '':
                 return '{0}?{1}&{2}'.format(url, filters, pagination)
             else:
                 return '{0}?{1}'.format(url, filters)
-        else:
-            if pagination_filter is not None:
+        elif pagination != '':
                 return '{0}?{1}'.format(url, pagination)
-        return url
+        else:
+            return url
 
 
     def __analyze(self, dictionary, corpus, text):
@@ -231,6 +231,8 @@ class DynizerConnection:
                                 include_constraining=True,
                                 include_applying=True)
         url = '/data/v1_1/actions/{0}/topologies'.format(action.id)
+        print(url)
+        print(data)
         return self.__POST(url, data, Topology)
 
     def __update_ActionTopology(self, action, topology):
@@ -338,7 +340,7 @@ class DynizerConnection:
 
 
     def __REQUEST(self, verb, endpoint, payload=None, result_obj=None, success_code=200,
-            reauthenticated=False)
+            reauthenticated=False):
         if self.connection is None:
             raise ConnectionError('Not connected to dynizer. Please issue a connect() call first')
 
@@ -358,8 +360,7 @@ class DynizerConnection:
             print(e)
             raise ConnectionError() from e
 
-        if response.status == 401 and not self.username is None and not self.password is None and
-           self.auto_reauth == True and retry == False:
+        if response.status == 401 and not self.username is None and not self.password is None and self.auto_reauth == True and retry == False:
             # Try to reauthenticate
             self._login(self.username, self.password)
             return self.__REQUEST(verb, endpoint, payload=payload, result_obj=result_obj,
