@@ -1,4 +1,4 @@
-from .filter import Filter
+from .fltr import Filter
 
 class PaginationFilter(Filter):
     def __init__(self, offset, limit):

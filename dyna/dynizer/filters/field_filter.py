@@ -1,6 +1,6 @@
 from ..types import *
 from ...common.errors import *
-from .filter import Filter
+from .fltr import Filter
 import urllib
 
 class FieldFilter(Filter):
