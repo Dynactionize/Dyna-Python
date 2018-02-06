@@ -231,8 +231,6 @@ class DynizerConnection:
                                 include_constraining=True,
                                 include_applying=True)
         url = '/data/v1_1/actions/{0}/topologies'.format(action.id)
-        print(url)
-        print(data)
         return self.__POST(url, data, Topology)
 
     def __update_ActionTopology(self, action, topology):
