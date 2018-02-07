@@ -7,7 +7,7 @@ import dateutil.parser
 
 @valid_field_filters('id', 'action_id', 'topology_id')
 class Instance:
-    def __init__(self, id=None, timestamp=None, status=None, action_id=None, topology_id=None, data=None):
+    def __init__(self, id=None, timestamp=None, status=None, action_id=None, topology_id=None, data=None, descriptives=None):
         self.id = id
         self.timestamp = timestamp
         self.status = status

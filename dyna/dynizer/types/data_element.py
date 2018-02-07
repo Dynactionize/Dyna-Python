@@ -5,6 +5,64 @@ from decimal import *
 import json
 import dateutil.parser
 
+class DynaText:
+    def __init__(self, text="", targetaction="", dictionary="", wordcorpus=""):
+        self.text = text
+        self.targetaction = targetaction
+        self.dictionary = dictionary
+        self.wordcorpus = wordcorpus
+
+
+    @staticmethod
+    def from_dict(dct):
+        retval = None
+        try:
+            retval = DynaText(dct.get('text', ""),
+                                   dct.get('target_action', ""),
+                                   dct.get('dictionary', ""),
+                                   dct.get('wordcorpus', ""))
+        except Exception as e:
+            raise DeserializatinoError(DynaText, 'dict', dct) from e
+        return retval
+
+
+    @staticmethod
+    def from_json(json_string):
+        dynatext = None
+        try:
+            data = json.loads(json_string)
+            dynatext = DynaText.from_dict(data)
+        except Exception as e:
+            raise DeserializationError(DynaText, 'json', data) from e
+        return dynatext
+
+
+    def to_dict(self):
+        dct = None
+        try:
+            dct = {
+                'text': self.text,
+                'target_action': self.targetaction,
+                'dictionary': self.dictionary,
+                'wordcorpus': self.wordcorpus
+            }
+        except Exception as e:
+            raise SerializationError(DynaText, 'dict') from e
+        return dct
+
+
+    def to_json(self):
+        json_string = ""
+        try:
+            dct = self.to_dict()
+            json_string = json.dumps(dct)
+        except Exception as e:
+            raise SerializationError(DynaText, 'json') from e
+        return json_string
+
+
+
+
 @valid_field_filters('id', 'value', 'datatype')
 class DataElement:
     def __init__(self, id=None, value=None, datatype=None):
@@ -38,6 +96,8 @@ class DataElement:
             return datetime.datetime.min
         if datatype == DataType.URI:
             return str(value)
+        if datatype == DataType.DYNATEXT:
+            return value
         return None
 
 
@@ -55,6 +115,8 @@ class DataElement:
             return dateutil.parser.parse(value)
         if datatype == DataType.URI:
             return str(value)
+        if datatype == DataType.DYNATEXT:
+            return DynaText.from_json(value)
         return None
 
     @staticmethod
@@ -71,6 +133,8 @@ class DataElement:
             return str(value.isoformat())
         if datatype == DataType.URI:
             return str(value)
+        if datatype == DataType.DYNATEXT:
+            return value.to_json()
         return 'Void'
 
     @staticmethod
