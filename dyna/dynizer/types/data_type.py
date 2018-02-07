@@ -9,6 +9,7 @@ class DataType(IntEnum):
     TIMESTAMP = 5
     URI = 6
     VOID = 7
+    DYNATEXT = 8
 
     def __str__(self):
         return 'URI' if self == DataType.URI else '{0}'.format(self.name).title()

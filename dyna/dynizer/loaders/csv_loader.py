@@ -80,6 +80,65 @@ class CSVRowElement(CSVAbstractElement):
         return True
 
 
+class CSVDynaTextElement(CSVAbstractElement):
+    def __init__(self, index: int,
+                       targetaction: str,
+                       dictionary: str,
+                       wordcorpus: str,
+                       component: ComponentType,
+                       label = '',
+                       required = True,
+                       default = None,
+                       allow_void = True,
+                       trasform_funcs = [],
+                       na_list = ['', 'n/a', 'N/A']):
+        super().__init__(None, DataType.DYNATEXT, component, label)
+        self.index = index
+        self.targetaction = targetaction
+        self.dictionary = dictionary
+        self.wordcorpus = wordcorpus
+        self.required = required
+        self.default = default
+        self.allow_void = allow_void
+        self.transform_funcs = list(transform_funcs)
+        self.na_list = list(na_list)
+
+    def fetch_from_row(self, row, components, data, labels):
+        if len(row) <= self.index:
+            if self.required:
+                return self._add_na_value(components, data, labels)
+        else:
+            value = row[self.index]
+            if value in self.na_list:
+                if self.required:
+                    return self._add_na_value(components, data, labels)
+            else:
+                for tf = self.transform_funcs:
+                    value = tf(value)
+
+                data.append(InstanceElement(
+                    value=DynaText(text=value,
+                                   targetaction=self.targetaction, dictionary=self.dictionary,
+                                   wordcorpus=self.wordcorpus), datatype=DataType.DYNATEXT))
+                labels.append(self.label)
+                return true
+
+    def _add_na_value(self, components, data, labels):
+        if self.default is not None:
+            data.append(InstanceElement(
+                value=DynaText(text="",
+                               targetaction=self.targetaction, dictionary=self.dictionary,
+                               wordcorpus=self.wordcorpus), datatype=DataType.DYNATEXT))
+        elif self.allow_void:
+            data.append(InstanceElement())
+        else:
+            return False
+
+        components.append(self.component)
+        labels.append(self.label)
+        return True
+
+
 
 class CSVStringCombinationElement(CSVAbstractElement):
     def __init__(self, indices: Sequence[int],

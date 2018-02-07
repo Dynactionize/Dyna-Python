@@ -27,10 +27,12 @@ class DynizerConnection:
         self.password = password
         self._headers = {
             'cache-control': 'no-cache',
-            'content-type': 'application/json'
+            'content-type': 'application/json',
+            'accept-encoding': '*'
         }
         self.connection = None
         self.token = None
+        self.auto_reauth=auto_reauth
 
     def __del__(self):
         self.close()
@@ -46,16 +48,17 @@ class DynizerConnection:
             if not self.key_file is None and not self.cert_file is None:
                 self.connection = http.client.HTTPSConnection(
                         self.dynizer_address, self.dynizer_port,
-                        key_file=self.key_file, cert_file=self.cert_file)
-            elif not self.username is None and not self.password is None:
-                self.connection = http.client.HTTPSConnection(
-                        self.dynizer_address, self.dynizer_port)
-                self._login(self.username, self.password)
+                        key_file=self.key_file, cert_file=self.cert_file,
+                        timeout=3600)
             else:
                 self.connection = http.client.HTTPSConnection(
-                        self.dynizer_address, self.dynizer_port)
+                        self.dynizer_address, self.dynizer_port,
+                        timeout=3600)
+            if not self.username is None and not self.password is None:
+                self._login(self.username, self.password)
         else:
-            self.connection = http.client.HTTPConnection(self.dynizer_address, self.dynizer_port)
+            self.connection = http.client.HTTPConnection(self.dynizer_address, self.dynizer_port,
+                    timeout=3600)
             if not self.username is None and not self.password is None:
                 self._login(self.username, self.password)
 
@@ -344,6 +347,7 @@ class DynizerConnection:
 
         url = '{0}{1}'.format(self.endpoint_prefix, endpoint)
         response = None
+        print('{verb} {host}:{port}{url}'.format(verb=verb, host=self.dynizer_address, port=self.dynizer_port, url=url))
         try:
             if payload is not None:
                 self.connection.request(verb, url, body=payload, headers=self._headers)
@@ -351,19 +355,21 @@ class DynizerConnection:
                 self.connection.request(verb, url, headers=self._headers)
             response = self.connection.getresponse()
         except Exception as e:
+            print('Exception upon request')
+            print(e)
             self.connect(True)
             print('{0} {1}'.format(verb, url))
             if not payload is None:
                 print(payload)
-            print(e)
             raise ConnectionError() from e
 
-        if response.status == 401 and not self.username is None and not self.password is None and self.auto_reauth == True and retry == False:
+        if response.status == 401 and not self.username is None and not self.password is None and self.auto_reauth == True and reauthenticated == False:
             # Try to reauthenticate
             self._login(self.username, self.password)
             return self.__REQUEST(verb, endpoint, payload=payload, result_obj=result_obj,
                     success_code=success_code, reauthenticated=True)
         if response.status != success_code:
+            print('Error code: {errorcode}'.format(errorcode=response.status))
             print('{0} {1}'.format(verb, url))
             if not payload is None:
                 print(payload)
@@ -385,6 +391,8 @@ class DynizerConnection:
                 else:
                     result = result_obj.from_json(json_string)
             except Exception as e:
+                print('Exception upon response')
+                print(e)
                 self.connect(True)
                 print('{0} {1}'.format(verb, url))
                 if not payload is None:

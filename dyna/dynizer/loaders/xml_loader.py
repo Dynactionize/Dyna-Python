@@ -130,7 +130,7 @@ class XMLExtractionElement(XMLAbstractElement):
             if self.required:
                 if self.default is not None:
                     components.append(self.component)
-                    data.append(InstanceElement(value=value, datatype=self.data_type))
+                    data.append(InstanceElement(value=default, datatype=self.data_type))
                     labels.append(self.label)
                 elif self.allow_void:
                     components.append(self.component)
@@ -156,6 +156,74 @@ class XMLExtractionElement(XMLAbstractElement):
                 data.append(InstanceElement(value=value, datatype=self.data_type))
                 labels.append(self.label)
         return True
+
+
+class XMLDynaTextElement(XMLAbstractElement):
+    def __init__(self, path: str,
+                       targetaction: str,
+                       dictionary: str,
+                       wordcorpus: str,
+                       component: ComponentType,
+                       label = '',
+                       required = True,
+                       default = None,
+                       allow_void = True,
+                       transform_funcs = []):
+        super().__init__(None, DataType.DYNATEXT, component, label)
+        self.path = path
+        self.targetaction = targetaction
+        self.dictionary = dictionary
+        self.wordcorpus = wordcorpus
+        self.required = required
+        self.default = default
+        self.allow_void = allow_void
+        self.transform_funcs = list(transform_funcs)
+
+    def fetch_from_entity(self, entity, components, data, labels, ns):
+        node = entity.findall(self.path, ns)
+        if len(node) == 0:
+            if self.required:
+                if self.default is not None:
+                    components.append(self.component)
+                    data.append(InstanceElement(
+                        value=DynaText(text=default,
+                                       targetaction=self.targetaction, dictionary=self.dictionary,
+                                       wordcorpus=self.wordcorpus), datatype=DataType.DYNATEXT))
+                    labels.append(self.label)
+                elif self.allow_void:
+                    components.append(self.component)
+                    data.append(InstanceElement(
+                        value=DynaText(text="",
+                                       targetaction=self.targetaction, dictionary=self.dictionary,
+                                       wordcorpus=self.wordcorpus), datatype=DataType.DYNATEXT))
+                    labels.append(self.label)
+                else:
+                    return False
+        elif len(node) == 1:
+            value = node[0].text
+            for tf in self.tranform_funcs:
+                value = tf(value)
+
+            components.append(self.component)
+            data.append(InstanceElement(
+                value=DynaText(text=value,
+                               targetaction=self.targetaction, dictionary=self.dictionary,
+                               wordcorpus=self.wordcorpus), datatype=DataType.DYNATEXT))
+            labels.append(self.label)
+        else:
+            for val in node:
+                value = val.text
+                for tf in self.transform_funcs:
+                    value = tf(value)
+
+                components.append(self.component)
+                data.append(InstanceElement(
+                    value=DynaText(text=value,
+                                   targetaction=self.targetaction, dictionary=self.dictionary,
+                                   wordcorpus=self.wordcorpus), datatype=DataType.DYNATEXT))
+                labels.append(self.label)
+        return True
+
 
 
 class XMLStringCombinationElement(XMLAbstractElement):
@@ -245,6 +313,7 @@ class XMLMapping:
         self.fallback = list(fallback)
         self.expanded_variables = []
         self.batch_size = batch_size
+        print(self.batch_size)
 
 
 class XMLLoader:
@@ -356,6 +425,7 @@ class XMLLoader:
 
 
         if len(loadlist) >= mapping.batch_size:
+            print('LOADLIST: {0}'.format(len(loadlist)))
             self.__push_batch(connection, loadlist)
 
 
