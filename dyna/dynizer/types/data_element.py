@@ -126,7 +126,8 @@ class DataElement:
         if datatype == DataType.STRING:
             return str(value)
         if datatype == DataType.BOOLEAN:
-            return 'true' if value else 'false'
+            #return 'true' if value else 'false'
+            return value
         if datatype == DataType.DECIMAL:
             return str(value)
         if datatype == DataType.TIMESTAMP:
