@@ -1,8 +1,30 @@
+CURRENT_DIR := $(shell pwd)
+
+GATEWAY_REPO := http://bitbucket.dyna:7990/scm/go/dynagatewaytypes.git
+
+all: init grpc
+
+clean: clean_grpc
+
 init:
 	pip3 install -r requirements.txt
 
-test:
-	/usr/bin/env python3 -m pytest --cov-config tests/coverage.rc --cov=dyna --cov-report=term --cov-report=annotate:cov_annotate tests
+	-rm -rf $(CURRENT_DIR)/deps/grpc
+	-mkdir -p $(CURRENT_DIR)/deps
+	cd $(CURRENT_DIR)/deps && git clone --recursive https://github.com/grpc/grpc
+	cd $(CURRENT_DIR)/deps/grpc && make plugins -j 12
 
-.PHONY: init test
+grpc: proto
+	cd proto/dynagatewaytypes && make python PYTHON_PREFIX=$(CURRENT_DIR)/dyna
+
+clean_grpc:
+	-rm -rf proto
+	-rm -rf $(CURRENT_DIR)/dyna/dynagatewaytypes	
+
+proto:
+	-mkdir -p proto
+	cd proto && git clone $(GATEWAY_REPO)
+
+
+.PHONY: init test grpc
 

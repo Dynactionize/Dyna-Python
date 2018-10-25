@@ -1,7 +1,8 @@
-from ..types import Action, ComponentType, DataElement, DataType, Instance, InstanceElement, Topology
-from ..connector import DynizerConnection
-from ...common.errors import LoaderError
+from ..dynagatewaytypes.enums_pb2 import ComponentType, DataType, VOID, STRING
+from ..common.errors import LoaderError
+from ..types import Action, Topology, Label, Labels, Value, Instance, InstanceBatches
 from typing import Sequence
+from ..client import DynizerClient
 import csv
 
 class CSVAbstractElement:
@@ -16,10 +17,9 @@ class CSVAbstractElement:
 
     def fetch_from_row(self, row, components, data, labels):
         components.append(self.component)
-        data.append(InstanceElement(value=self.value, datatype=self.data_type))
+        data.append(Value(self.data_type, self.value))
         labels.append(self.label)
         return True
-
 
 
 class CSVFixedElement(CSVAbstractElement):
@@ -62,16 +62,16 @@ class CSVRowElement(CSVAbstractElement):
                 for tf in self.transform_funcs:
                     value = tf(value)
 
-                data.append(InstanceElement(value=value, datatype=self.data_type))
+                data.append(Value(self.data_type, value))
                 components.append(self.component)
                 labels.append(self.label)
                 return True
 
     def _add_na_value(self, components, data, labels):
         if self.default is not None:
-            data.append(InstanceElement(value=value, datatype=self.data_type))
+            data.append(Value(self.data_type, self.default))
         elif self.allow_void:
-            data.append(InstanceElement())
+            data.append(Value(VOID, None))
         else:
             return False
 
@@ -79,7 +79,7 @@ class CSVRowElement(CSVAbstractElement):
         labels.append(self.label)
         return True
 
-
+"""
 class CSVDynaTextElement(CSVAbstractElement):
     def __init__(self, index: int,
                        targetaction: str,
@@ -137,6 +137,7 @@ class CSVDynaTextElement(CSVAbstractElement):
         components.append(self.component)
         labels.append(self.label)
         return True
+"""
 
 
 
@@ -146,7 +147,7 @@ class CSVStringCombinationElement(CSVAbstractElement):
                         label = '',
                         combinator_func = None,
                         required = True):
-        super().__init__(None, DataType.STRING, component, label)
+        super().__init__(None, STRING, component, label)
         self.indices = indices
         self.combinator_func = combinator_func
         self.required = required
@@ -162,21 +163,21 @@ class CSVStringCombinationElement(CSVAbstractElement):
         value = self.combinator_func(tmp_data) if self.combinator_func is not None else self._default_combinator(tmp_data)
         if len(value) == 0:
             if self.required:
-                data.append(InstanceElement())
+                data.append(Value(self.data_type, ""))
             else:
                 return False
         else:
-            data.append(InstanceElement(value=value, datatype=DataType.STRING))
+            data.append(Value(self.data_type, value))
 
-        component.append(self.component)
+        components.append(self.component)
         labels.append(self.label)
 
     def _default_combinator(self, tmp_data):
-        result = '';
+        result = ''
         for elem in tmp_data:
             if len(elem) > 0:
                 if len(result) == 0:
-                    result = '{0}'.format(result, elem)
+                    result = '{0}'.format(elem)
                 else:
                     result = '{0} {1}'.format(result, elem)
         return result
@@ -220,44 +221,32 @@ class CSVLoader:
         self.quoting = quoting
         self.skipinitialspace = skipinitialspace
         self.strict = strict
-        print(self.mappings)
 
     def add_mapping(self, mapping: CSVMapping):
         self.mappings.append(mapping)
 
-    def run(self, connection: DynizerConnection, debug=False):
+    def run(self, client: DynizerClient, debug=False):
         try:
-            if connection is not None:
-                connection.connect()
             for mapping in self.mappings:
-                self.__run_mapping(connection, mapping, debug)
-            if connection is not None:
-                connection.close()
+                self.__run_mapping(client, mapping, debug)
         except Exception as e:
-            if connection is not None:
-                connection.close()
             raise e
 
-    def __run_mapping(self, connection: DynizerConnection,
+    def __run_mapping(self, client: DynizerClient,
                             mapping: CSVMapping,
                             debug):
-        print('Creating instances for: {0}'.format(mapping.action.name))
-        action_obj = None
-        if connection is not None:
-            try:
-                action_obj = connection.create(mapping.action)
-            except Exception as e:
-                raise LoaderError(CSVLoader, "Failed to create required action: '{0}'".format(mapping.action.name))
+        print('Creating instances for: {0}'.format(mapping.action.get_name()))
+        action_obj = client.action_service().create(mapping.action)
 
         topology_map = {}
         loadlist = []
 
-        self.__run_simple_mapping(connection, mapping, action_obj, topology_map, loadlist, debug)
+        self.__run_simple_mapping(client, mapping, action_obj, topology_map, loadlist, debug)
 
         if len(loadlist) > 0:
-            self.__push_batch(connection, loadlist)
+            self.__push_batch(client, loadlist)
 
-    def __run_simple_mapping(self, connection: DynizerConnection,
+    def __run_simple_mapping(self, client: DynizerClient,
                                    mapping: CSVMapping,
                                    action_obj, topology_map, loadlist,
                                    debug):
@@ -277,16 +266,16 @@ class CSVLoader:
                 if row_cnt <= self.header_count:
                     continue
 
-                status = self.__run_mapping_on_row(row, topology_map, loadlist, action_obj, connection, mapping, debug=debug)
+                status = self.__run_mapping_on_row(row, topology_map, loadlist, action_obj, client, mapping, debug=debug)
                 if not status:
-                    self.__run_mapping_on_row(row, topology_map, loadlist, action_obj, connection, mapping, fallback=True, debug=debug)
+                    self.__run_mapping_on_row(row, topology_map, loadlist, action_obj, client, mapping, fallback=True, debug=debug)
 
             if len(loadlist) >= mapping.batch_size:
-                self.__push_batch(connection, loadlist)
+                self.__push_batch(client, loadlist)
 
     def __run_mapping_on_row(self, row, topology_map, loadlist,
                                    action_obj: Action,
-                                   connection: DynizerConnection,
+                                   client: DynizerClient,
                                    mapping: CSVMapping,
                                    fallback = False,
                                    debug = False):
@@ -303,12 +292,8 @@ class CSVLoader:
 
         if len(components) < 2:
             return False
-
-        if debug:
-            inst = Instance(action_id=0, topology_id=0, data=data)
-            print(inst.to_json())
-
-        if connection is None:
+        
+        if client is None:
             return True
 
         top_map_key = ','.join(map(str, components))
@@ -317,33 +302,32 @@ class CSVLoader:
             topology_obj = topology_map[top_map_key]
         else:
             if topology_obj is None:
-                try:
-                    topology = Topology(components=components, labels=labels)
-                    topology_obj = connection.create(topology)
-                    topology_obj.labels = labels
-                except Exception as e:
-                    raise LoaderError(CSVLoader, "Failed to create topology: '{0}'".format(top_map_key))
+                topology = Topology.from_component_array(components)
+                topology_obj = client.topology_service().create(topology)
 
-            try:
-                connection.link_actiontopology(action_obj, topology_obj)
-            except Exception as e:
-                print("Failed to link action and topology.")
+            top_labels = Labels(action_obj, topology_obj)
+            for idx, lbl in enumerate(labels):
+                top_labels.add_label(Label(idx+1, lbl))
+
+            res = client.label_service().create(top_labels)
+            if res == False:
+                print("Warning: failed to create labels")
 
             topology_map[top_map_key] = topology_obj
 
-        inst = Instance(action_id=action_obj.id, topology_id=topology_obj.id, data=data)
+        inst = Instance(action=action_obj, topology=topology_obj, values=data)
+        if debug:
+            inst.log()
         loadlist.append(inst)
         return True
 
 
 
-    def __push_batch(self, connection: DynizerConnection,
+    def __push_batch(self, client: DynizerClient,
                            batch: Sequence[Instance]):
-        if connection is not None:
-            print("Writing batch ...")
-            try:
-                connection.batch_create(batch)
-                batch.clear()
-            except Exception as e:
-                raise LoaderError(CSVLoader, "Failed to push batch of instances")
+        batches = InstanceBatches(batch)
+        res = client.instance_service().batch_create(batches)
+        if res == False:
+           raise LoaderError(CSVLoader, "Failed to push batch of instances") 
+        batch.clear()
 
