@@ -1,6 +1,6 @@
 CURRENT_DIR := $(shell pwd)
 
-GATEWAY_REPO := http://bitbucket.dyna:7990/scm/go/dynagatewaytypes.git
+GATEWAY_REPO := https://github.com/Dynactionize/dynagatewaytypes.git
 
 all: init grpc
 
