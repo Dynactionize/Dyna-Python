@@ -61,7 +61,7 @@ class Uri:
 
 
     @staticmethod
-    def _form_pb(uri: PBUri):
+    def _from_pb(uri: PBUri):
         return Uri(uri.schema, uri.user_name, uri.user_password, uri.host, uri.port,
                     uri.path, uri.query, uri.fragment)
 
@@ -100,7 +100,7 @@ class Timestamp:
     @staticmethod
     def _from_pb(ts: PBTimestamp):
         return Timestamp(ts.unix_seconds, ts.timezone, ts.offset)
-        
+
     def _to_pb(self) -> PBTimestamp:
         pb = PBTimestamp()
         pb.unix_seconds = self.unix_seconds
@@ -201,7 +201,7 @@ class Value:
                 raise DynaValueError(value, 'FLOAT')
         else:
             self.value = value
-        
+
     def __init_unsigned_integer(self, value):
         if not isinstance(value, int):
             if isinstance(value, str):
@@ -245,7 +245,7 @@ class Value:
         elif v.data_type == TIMESTAMP:
             val = Timestamp._from_pb(v.timestamp_value)
         elif v.data_type == URI:
-            val = Uri._form_pb(v.uri_value)
+            val = Uri._from_pb(v.uri_value)
         elif v.data_type == FLOAT:
             val = v.float_value
         elif v.data_type == UNSIGNED_INTEGER:
@@ -285,6 +285,6 @@ class Value:
             pb.binary_value = self.value
         elif self.data_type == UUID:
             pb.uuid_value = str(self.value)
-        
+
         return pb
 
