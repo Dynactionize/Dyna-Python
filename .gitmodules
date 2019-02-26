@@ -1,0 +1,3 @@
+[submodule "dynagatewaytypes"]
+	path = dynagatewaytypes
+	url = https://github.com/Dynactionize/dynagatewaytypes.git

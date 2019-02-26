@@ -2,19 +2,14 @@
 __pycache__
 *.pyc
 
-cov_annotate
-.coverage
-
-# No certificates
-.key
-.crt
-.p12
-
 # No proto generated files
 *_pb2.py
 *_pb2_grpc.py
 
-# No deps and proto directory
-deps
-proto
-dynagatewaytypes
+
+build
+dist
+dyna_python_dynactionize.com*
+.eggs
+.venv
+

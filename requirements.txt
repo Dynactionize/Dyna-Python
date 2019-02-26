@@ -1,4 +1,0 @@
-python-dateutil>=2.6.0
-pytest
-pytest-cov
-googleapis-common-protos
