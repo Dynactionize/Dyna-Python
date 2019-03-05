@@ -46,6 +46,15 @@ class Client:
         self._token = None
         self._metadata = []
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
+
+    def close(self):
+        self._channel.close()
+
     def user_login(self, username, password):
         loginReq = authentication_pb2.GetTokenReq(
             user = authentication_pb2.UserAuth(

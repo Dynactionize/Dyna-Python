@@ -146,7 +146,7 @@ class DynaBuildPy(_build_py):
 setup(
     distclass=DynaDistribution,
     name="dyna-python-dynactionize.com",
-    version="1.0.1",
+    version="1.0.2",
     author="Dynactionize NV",
     author_email="info-belgium@dynationize.com",
     description="Python connector for the Dynizer",

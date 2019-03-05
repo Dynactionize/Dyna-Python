@@ -3,3 +3,5 @@
 . .venv/bin/activate
 
 twine upload dist/* --verbose
+
+rm -rf dist/*
