@@ -4,24 +4,24 @@ import csv
 #from tables import Table
 from enum import IntEnum
 
-from .dynagatewaytypes import datatypes_pb2
-from .dynagatewaytypes import enums_pb2
-from .dynagatewaytypes import general_types_pb2
+from dynagatewaytypes import datatypes_pb2
+from dynagatewaytypes import enums_pb2
+from dynagatewaytypes import general_types_pb2
 
-from .dynagatewaytypes import authentication_pb2_grpc
-from .dynagatewaytypes import authentication_pb2
-from .dynagatewaytypes import action_pb2_grpc
-from .dynagatewaytypes import action_pb2
-from .dynagatewaytypes import topology_pb2_grpc
-from .dynagatewaytypes import topology_pb2
-from .dynagatewaytypes import label_pb2_grpc
-from .dynagatewaytypes import label_pb2
-from .dynagatewaytypes import instance_pb2_grpc
-from .dynagatewaytypes import instance_pb2
-from .dynagatewaytypes import query_pb2_grpc
-from .dynagatewaytypes import query_pb2
-from .dynagatewaytypes import networkquery_pb2_grpc
-from .dynagatewaytypes import networkquery_pb2
+from dynagatewaytypes import authentication_pb2_grpc
+from dynagatewaytypes import authentication_pb2
+from dynagatewaytypes import action_pb2_grpc
+from dynagatewaytypes import action_pb2
+from dynagatewaytypes import topology_pb2_grpc
+from dynagatewaytypes import topology_pb2
+from dynagatewaytypes import label_pb2_grpc
+from dynagatewaytypes import label_pb2
+from dynagatewaytypes import instance_pb2_grpc
+from dynagatewaytypes import instance_pb2
+from dynagatewaytypes import query_pb2_grpc
+from dynagatewaytypes import query_pb2
+from dynagatewaytypes import networkquery_pb2_grpc
+from dynagatewaytypes import networkquery_pb2
 
 class Service(IntEnum):
     ACTION_SERVICE = 0
