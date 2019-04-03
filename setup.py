@@ -13,8 +13,8 @@ with open("README.md") as fh:
 
 
 setup(
-    name="dyna-python-dynactionize.com",
-    version="1.0.3",
+    name="dynapython",
+    version="__dynizer_version__",
     author="Dynactionize NV",
     author_email="info-belgium@dynationize.com",
     description="Python connector for the Dynizer",
@@ -28,7 +28,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     install_requires=[
-        "dynagatewaytypes-dynactionize.com"
+        "dynagatewaytypes"
     ],
     python_requires="~=3.6",
 )
