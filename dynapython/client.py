@@ -104,7 +104,6 @@ class Client:
 
 
     def call(self, service_func, arg):
-        print(self._metadata)
         return service_func(arg, metadata=self._metadata)
 
     def service(self, service):
